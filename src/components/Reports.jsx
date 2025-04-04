@@ -87,14 +87,24 @@ export default function Reports() {
       ["Sr.No", "Order ID", "Style Number", "Size", "Channel", "Last Scanner"],
     ];
 
-    const rows = selectedOrders.map((order, i) => [
-      i + 1,
+   
+
+  const rowss = selectedOrders.filter((order)=> order.locations.name!=="Shipping Table / शिपिंग टेबल");
+  const rows = rowss.map((order, i)  =>[
+          i + 1,
       order.order_id || "N/A",
       order.orders_2?.style_number || "N/A",
       orders.find((o) => o.order_id === order.order_id)?.size || "N/A",
       orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
       (order.employees?.user_name?.split(" / ")[0] || "N/A").trim(),
-    ]);
+    ]
+
+
+);
+
+
+
+
 
     autoTable(doc, {
       head: headers,
@@ -117,10 +127,11 @@ export default function Reports() {
   if (loading)
     return (
     
-      <div className=" container mx-auto grid items-center w-full h-full">
-        <img src="https://i.pinimg.com/originals/71/3a/32/713a3272124cc57ba9e9fb7f59e9ab3b.gif" className=" mx-auto" alt="loading..." />
-        </div>
-        
+      <>
+      <div className="container mx-auto grid items-center justify-center">
+          <span className="w-20 h-20 border-b-2 border-t-2 duration-100 ease-in animate-spin border-blue-500 rounded-full"> </span>
+      </div>
+    </>
     
     );
 

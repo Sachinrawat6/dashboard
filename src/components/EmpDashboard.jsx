@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useGlobalContext } from "./ProductContext";
 
 const EmpDashboard = () => {
-  const { scanTracking2, orders } = useGlobalContext();
+  const { scanTracking2, orders,loading,styleLoading } = useGlobalContext();
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -54,16 +54,32 @@ const EmpDashboard = () => {
     return { portal, ordersByPortal, inventoryByPortal, cuttingByPortal, shipByPortal };
   });
 
+  if(loading){
+    return <>
+    <div className="container mx-auto grid items-center justify-center">
+        <span className="w-20 h-20 border-b-2 border-t-2 duration-100 ease-in animate-spin border-blue-500 rounded-full"> </span>
+    </div>
+  </>
+  }
+
   return (
-    <div className="p-4">
+   <div className="p-4">
       <div className="flex gap-4 mb-4">
         <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 border-gray-200 rounded-md" />
         <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 border-gray-200 rounded-md" />
       </div>
+
+      {
+        styleLoading? <>
+          <div className="container mx-auto grid items-center justify-center">
+              <span className="w-20 h-20 border-b-2 border-t-2  duration-75 ease-in animate-spin border-blue-500 rounded-full"> </span>
+          </div>
+        </> :
       
-      <table className="border-collapse border w-full text-center text-md text-xl">
+      
+      <table className="border-collapse border w-full text-center text-md text-lg">
         <thead>
-          <tr className="bg-gray-100 text-center text-2xl text-blue-500">
+          <tr className="bg-gray-100 text-center text-xl text-blue-500">
             <th className="border border-gray-200 p-3">Portal</th>
             {portals.map((portal) => (<th key={portal} className="border p-3 border-gray-200">{portal}</th>))}
             <th className="border border-gray-200 p-3">Total Orders</th>
@@ -91,8 +107,10 @@ const EmpDashboard = () => {
           ))}
         </tbody>
       </table>
+}
     </div>
   );
+  
 };
 
 export default EmpDashboard;

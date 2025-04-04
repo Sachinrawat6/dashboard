@@ -131,13 +131,11 @@ const stageCounts = useMemo(() => ({
 
   if (loading)
     return (
-      <div className="container mx-auto grid items-center w-full h-full">
-        <img
-          src="https://i.pinimg.com/originals/71/3a/32/713a3272124cc57ba9e9fb7f59e9ab3b.gif"
-          className="mx-auto"
-          alt="loading..."
-        />
-      </div>
+      <>
+    <div className="container mx-auto grid items-center justify-center">
+        <span className="w-20 h-20 border-b-2 border-t-2 duration-100 ease-in animate-spin border-blue-500 rounded-full"> </span>
+    </div>
+  </>
     );
 
   return (

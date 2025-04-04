@@ -28,7 +28,7 @@ const ProductContextProvider = ({ children }) => {
     const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
 
     try {
-      console.log(`📦 Fetching Locations: ${MAX_RECORDS} records in ${totalBatches} batches...`);
+      // console.log(`📦 Fetching Locations: ${MAX_RECORDS} records in ${totalBatches} batches...`);
 
       for (let i = 0; i < totalBatches; i += 5) {
         const batchPromises = [];
@@ -51,7 +51,7 @@ const ProductContextProvider = ({ children }) => {
 
       setScanTracing(allLocations);
       setScanTracing2(allLocations);
-      console.log(allLocations)
+      // console.log(allLocations)
     } catch (error) {
       console.error("🚨 Error fetching Locations:", error);
     }
@@ -65,7 +65,7 @@ const ProductContextProvider = ({ children }) => {
     const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
 
     try {
-      console.log(`📦 Fetching Orders: ${MAX_RECORDS} records in ${totalBatches} batches...`);
+      // console.log(`📦 Fetching Orders: ${MAX_RECORDS} records in ${totalBatches} batches...`);
 
       for (let i = 0; i < totalBatches; i += 5) {
         const batchPromises = [];
@@ -87,7 +87,7 @@ const ProductContextProvider = ({ children }) => {
       }
 
       setOrders(allOrders);
-      console.log(allOrders)
+      // console.log(allOrders)
       setStyleLoading(false)
     } catch (error) {
       console.error("🚨 Error fetching Orders:", error);
