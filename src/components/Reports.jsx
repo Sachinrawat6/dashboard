@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGlobalContext } from "./ProductContext";
 import Filters from "./Filters";
 import { saveAs } from "file-saver";
@@ -9,27 +9,34 @@ import autoTable from "jspdf-autotable";
 export default function Reports() {
   const { scanTracking, orders, loading } = useGlobalContext();
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedOrders, setSelectedOrders] = useState([]); // Store full objects
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [latestScans, setLatestScans] = useState([]);
   const itemsPerPage = 100;
 
+  useEffect(() => {
+    if (scanTracking.length > 0) {
+      const scansByOrder = {};
+
+      scanTracking.forEach(scan => {
+        if (!scansByOrder[scan.order_id] || 
+            new Date(scan.scanned_timestamp) > new Date(scansByOrder[scan.order_id].scanned_timestamp)) {
+          scansByOrder[scan.order_id] = scan;
+        }
+      });
+
+      setLatestScans(Object.values(scansByOrder));
+    }
+  }, [scanTracking]);
+
   // Pagination Logic
-  // const totalPages = Math.ceil(scanTracking.length / itemsPerPage);
+  const totalPages = Math.ceil(latestScans.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentOrders = scanTracking.slice(indexOfFirstItem, indexOfLastItem);
+  const currentOrders = latestScans.slice(indexOfFirstItem, indexOfLastItem);
 
+  const handlePrev = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+  const handleNext = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
 
-
-  const totalPages = Math.ceil(scanTracking.length / itemsPerPage);
-
-  const handlePrev = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-  // Store full order objects instead of just order_id
   const toggleSelection = (order) => {
     setSelectedOrders((prev) => {
       const isAlreadySelected = prev.some(
@@ -41,227 +48,294 @@ export default function Reports() {
     });
   };
 
-  // Select/Deselect All Orders
   const handleSelectAll = (e) => {
-    setSelectedOrders(e.target.checked ? scanTracking : []);
+    setSelectedOrders(e.target.checked ? latestScans : []);
   };
 
-  // Export to CSV
+  // Corrected scanner name extraction
+  const getScannerName = (order) => {
+    try {
+      // Handle the nested structure properly
+      if (order.employees && typeof order.employees === 'object') {
+        if (order.employees.value && order.employees.value.user_name) {
+          return order.employees.value.user_name;
+        }
+        if (order.employees.user_name) {
+          return order.employees.user_name;
+        }
+      }
+      
+      // Handle stringified JSON case
+      if (typeof order.employees === 'string') {
+        const parsed = JSON.parse(order.employees);
+        if (parsed.value && parsed.value.user_name) {
+          return parsed.value.user_name;
+        }
+        if (parsed.user_name) {
+          return parsed.user_name;
+        }
+      }
+      
+      return "N/A";
+    } catch (e) {
+      return "N/A";
+    }
+  };
+
   const exportToCSV = () => {
-    const csvData = scanTracking.map((order) => ({
+    const csvData = latestScans.map((order) => ({
       "Order ID": order.order_id,
-      Channel:
-        orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
+      Channel: orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
       "Style Number": order.orders_2?.style_number || "N/A",
       Size: orders.find((o) => o.order_id === order.order_id)?.size || "N/A",
-      "Last Scanner": order.employees?.user_name || "N/A",
+      "Last Scanner": getScannerName(order),
       Location: order.locations?.name || "N/A",
       "Last Scan": order.scanned_timestamp || "N/A",
-      Status:
-        orders.find((o) => o.order_id === order.order_id)?.status || "N/A",
+      Status: order.locations?.name?.includes("Shipping Table") ? "Shipped" : "Pending",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(csvData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     const data = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(data, "orders_report.xlsx");
   };
 
-  // Export to PDF
   const exportToPDF = () => {
     if (selectedOrders.length === 0) {
-      alert("No orders selected!");
+      alert("Please select at least one order to export!");
       return;
     }
 
     const doc = new jsPDF();
-    doc.text("Orders Report", 14, 10);
+    doc.setFontSize(16);
+    doc.text("Orders Report", 14, 16);
+    doc.setFontSize(10);
 
     const headers = [
-      ["Sr.No", "Order ID", "Style Number", "Size", "Channel", "Last Scanner"],
+      ["Sr.No", "Order ID", "Style", "Size", "Channel", "Scanner", "Location", "Status"]
     ];
 
-   
-
-  const rowss = selectedOrders.filter((order)=> order.locations.name!=="Shipping Table / शिपिंग टेबल");
-  const rows = rowss.map((order, i)  =>[
-          i + 1,
+    const rows = selectedOrders.map((order, i) => [
+      i + 1,
       order.order_id || "N/A",
       order.orders_2?.style_number || "N/A",
       orders.find((o) => o.order_id === order.order_id)?.size || "N/A",
       orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
-      (order.employees?.user_name?.split(" / ")[0] || "N/A").trim(),
-    ]
-
-
-);
-
-
-
-
+      getScannerName(order),
+      order.locations?.name?.split(" / ")[0] || "N/A",
+      order.locations?.name?.includes("Shipping Table") ? "Shipped" : "Pending"
+    ]);
 
     autoTable(doc, {
       head: headers,
       body: rows,
-      startY: 20,
-      styles: { fontSize: 10, cellWidth: "wrap" },
-      columnStyles: {
-        0: { cellWidth: 15 },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 35 },
-        5: { cellWidth: 40 },
+      startY: 25,
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3,
+        valign: 'middle'
       },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 15 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 30 },
+        6: { cellWidth: 35 },
+        7: { cellWidth: 20 }
+      },
+      margin: { top: 20 }
     });
 
     doc.save("orders_report.pdf");
   };
 
-  if (loading)
+  if (loading) {
     return (
-    
-      <>
-      <div className="container mx-auto grid items-center justify-center">
-          <span className="w-20 h-20 border-b-2 border-t-2 duration-100 ease-in animate-spin border-blue-500 rounded-full"> </span>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
       </div>
-    </>
-    
     );
+  }
 
   return (
-    <div className="p-6">
-      <Filters />
-      <h2 className="text-xl font-bold mb-4">Orders List</h2>
-      <table className="min-w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-200 p-2">
-              <input
-                type="checkbox"
-                onChange={handleSelectAll}
-                checked={selectedOrders.length === scanTracking.length}
-              />
-            </th>
-            <th className="border border-gray-200 p-2">Sr.No</th>
-            <th className="border border-gray-200 p-2">Order ID</th>
-            <th className="border border-gray-200 p-2">Channel</th>
-            <th className="border border-gray-200 p-2">Style Number</th>
-            <th className="border border-gray-200 p-2">Size</th>
-            <th className="border border-gray-200 p-2">Last Scanner</th>
-            <th className="border border-gray-200 p-2">Location</th>
-            <th className="border border-gray-200 p-2">Last Scan</th>
-            <th className="border border-gray-200 p-2">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentOrders.map((order, i) => {
-            const matchingData =
-              orders.find((item) => item.order_id === order.order_id) || {};
-            return (
-              <tr
-                key={`order-${i}`}
-                className="text-center border-b hover:bg-gray-100"
-              >
-                <td className="border border-gray-200 p-2">
+    <div className="p-6 max-w-full overflow-x-auto">
+      <div className="mb-6">
+        <Filters />
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+          <h2 className="text-2xl font-semibold text-gray-800">Order Tracking Report</h2>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button
+              onClick={exportToCSV}
+              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export to Excel
+            </button>
+            <button
+              onClick={exportToPDF}
+              disabled={selectedOrders.length === 0}
+              className={`px-4 py-2 rounded-md transition-colors flex items-center justify-center gap-2 ${
+                selectedOrders.length === 0
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-red-500 text-white hover:bg-red-600"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export to PDF
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+          <div className="text-sm text-gray-600">
+            Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, latestScans.length)} of {latestScans.length} records
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handlePrev}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded-md border ${
+                currentPage === 1
+                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "bg-white text-blue-600 border-blue-300 hover:bg-blue-50"
+              }`}
+            >
+              Previous
+            </button>
+            <span className="px-3 py-1 bg-blue-500 text-white rounded-md">
+              {currentPage}
+            </span>
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded-md border ${
+                currentPage === totalPages
+                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "bg-white text-blue-600 border-blue-300 hover:bg-blue-50"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
                   <input
                     type="checkbox"
-                    checked={selectedOrders.some(
-                      (o) => o.order_id === order.order_id
-                    )}
-                    onChange={() => toggleSelection(order)}
+                    onChange={handleSelectAll}
+                    checked={selectedOrders.length === latestScans.length && latestScans.length > 0}
+                    className="rounded text-blue-500 focus:ring-blue-400"
                   />
-                </td>
-                <td className="border border-gray-200 p-2">
-                  {indexOfFirstItem + i + 1}
-                </td>
-                <td className="border border-gray-200 text-blue-500 p-2">
-                  {order.order_id}
-                </td>
-                <td className="border border-gray-200 p-2">
-                  {matchingData.channel || "loading..."}
-                </td>
-                <td className="border border-gray-200 p-2">
-                  {order.orders_2?.style_number || "N/A"}
-                </td>
-                <td className="border border-gray-200 p-2">
-                  {matchingData.size || "loading..."}
-                </td>
-                <td className="border border-gray-200 p-2">
-                  {order.employees?.user_name || "N/A"}
-                </td>
-                <td className="border border-gray-200 p-2">
-                  {order.locations?.name || "N/A"}
-                </td>
-                <td className="border border-gray-200 p-2">
-                  {order.scanned_timestamp || "N/A"}
-                </td>
-                <td className="border border-gray-200 p-2 text-white">
-                  <span
-                    className={`rounded-xl py-0 px-2 ${
-                      order.locations?.name?.includes("Shipping Table")
-                        ? "bg-green-400"
-                        : "bg-yellow-300"
-                    }`}
-                  >
-                    {order.locations?.name?.includes("Shipping Table")
-                      ? "shipped"
-                      : "pending"}
-                  </span>
-                </td>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Style</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scanner</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Scan</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <div className="flex justify-between mt-4">
-        <div className="flex gap-4  ">
-          <button
-            onClick={exportToCSV}
-            className="px-4  bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            Export CSV
-          </button>
-          <button
-            onClick={exportToPDF}
-            disabled={selectedOrders.length === 0}
-            className={`px-4 py-2 bg-red-500 text-white rounded ${
-              selectedOrders.length === 0
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-red-600"
-            }`}
-          >
-            Export PDF
-          </button>
-         
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {currentOrders.map((order, i) => {
+                const matchingData = orders.find(item => item.order_id === order.order_id) || {};
+                const isSelected = selectedOrders.some(o => o.order_id === order.order_id);
+                
+                return (
+                  <tr 
+                    key={`order-${i}`} 
+                    className={`${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelection(order)}
+                        className="rounded text-blue-500 focus:ring-blue-400"
+                      />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {indexOfFirstItem + i + 1}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
+                      {order.order_id}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {matchingData.channel || <span className="text-gray-300">N/A</span>}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {order.orders_2?.style_number || <span className="text-gray-300">N/A</span>}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {matchingData.size || <span className="text-gray-300">N/A</span>}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {getScannerName(order)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {order.locations?.name || <span className="text-gray-300">N/A</span>}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {order.scanned_timestamp ? (
+                        new Date(order.scanned_timestamp).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })
+                      ) : (
+                        <span className="text-gray-300">N/A</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          order.locations?.name?.includes("Shipping Table")
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {order.locations?.name?.includes("Shipping Table")
+                          ? "Shipped"
+                          : "Pending"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-        <div className="flex justify-center space-x-4 items-center ">
-      <button 
-        onClick={handlePrev} 
-        disabled={currentPage === 1} 
-        className="px-4 py-2 bg-blue-300 cursor-pointer rounded disabled:opacity-50"
-      >
-        Prev
-      </button>
-      <span className="font-semibold">
-        Page {currentPage} of {totalPages}
-      </span>
-      <button 
-        onClick={handleNext} 
-        disabled={currentPage === totalPages} 
-        className="px-4 py-2 bg-blue-300 cursor-pointer rounded disabled:opacity-50"
-      >
-        Next
-      </button>
-    </div>
 
-        
+        {latestScans.length === 0 && !loading && (
+          <div className="text-center py-10 text-gray-500">
+            No order records found
+          </div>
+        )}
       </div>
     </div>
   );

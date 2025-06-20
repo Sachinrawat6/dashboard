@@ -26,6 +26,9 @@ export default function Filters() {
         <option value="Shoppersstop">Shoppersstop </option>
         <option value="Shopify">Shopify</option>
         <option value="Sample">Sample</option>
+        <option value="Tushar">Tushar</option>
+        <option value="Sakshi">Sakshi</option>
+        
       </select>
 
       <input
