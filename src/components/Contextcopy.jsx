@@ -3,33 +3,30 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 const ProductContext = createContext();
 const ProductContextProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
-  const [scanTracking, setScanTracing] = useState([]);
-  const [scanTracking2,setScanTracing2] = useState([]);
+  const [scanTracking, setScanTracking] = useState([]);
+  const [scanTracking2, setScanTracking2] = useState([]);
   const [filters, setFilters] = useState({});
-  const [loading,setLoading] = useState(true);
-  const[styleLoading,setStyleLoading]= useState(false);
+  const [loading, setLoading] = useState(true);
+  const [styleLoading, setStyleLoading] = useState(false);
 
-  const MAX_RECORDS = 2000; // Limit to 5000 records per API
-  const BATCH_SIZE = 500; // Fetch 500 records per batch
+  const MAX_RECORDS = 7000;
+  const BATCH_SIZE = 500;
   const API_HEADERS = {
     "xc-token": "LsOnEY-1wS4Nqjz15D1_gxHu0pFVcmA_5LNqCAqK",
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
-
-  setTimeout(()=>{
-    setLoading(false)
-  },5000)
-
-
-   // Location API Fetching (Limited to 5000 Records)
-   const fetchLocation = async () => {
+  const fetchLocation = async () => {
     let allLocations = [];
     const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
 
     try {
-      // console.log(`📦 Fetching Locations: ${MAX_RECORDS} records in ${totalBatches} batches...`);
-
       for (let i = 0; i < totalBatches; i += 5) {
         const batchPromises = [];
         for (let j = 0; j < 5 && (i + j) < totalBatches; j++) {
@@ -45,28 +42,22 @@ const ProductContextProvider = ({ children }) => {
         const batchRecords = batchResults.flatMap((data) => data.list || []);
         allLocations = [...allLocations, ...batchRecords];
 
-        // console.log(`✅ Locations Fetched: ${allLocations.length}/${MAX_RECORDS}`);
         if (allLocations.length >= MAX_RECORDS) break;
       }
 
-      setScanTracing(allLocations);
-      setScanTracing2(allLocations);
-      // console.log(allLocations)
+      setScanTracking(allLocations);
+      setScanTracking2(allLocations);
     } catch (error) {
-      console.error("🚨 Error fetching Locations:", error);
+      console.error("Error fetching Locations:", error);
     }
   };
 
-
-  // Orders API Fetching (Limited to 5000 Records)
   const fetchOrders = async () => {
     setStyleLoading(true);
     let allOrders = [];
     const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
 
     try {
-      // console.log(`📦 Fetching Orders: ${MAX_RECORDS} records in ${totalBatches} batches...`);
-
       for (let i = 0; i < totalBatches; i += 5) {
         const batchPromises = [];
         for (let j = 0; j < 5 && (i + j) < totalBatches; j++) {
@@ -82,32 +73,26 @@ const ProductContextProvider = ({ children }) => {
         const batchRecords = batchResults.flatMap((data) => data.list || []);
         allOrders = [...allOrders, ...batchRecords];
 
-        // console.log(`✅ Orders Fetched: ${allOrders.length}/${MAX_RECORDS}`);
         if (allOrders.length >= MAX_RECORDS) break;
       }
 
       setOrders(allOrders);
-      // console.log(allOrders)
-      setStyleLoading(false)
+      setStyleLoading(false);
     } catch (error) {
-      console.error("🚨 Error fetching Orders:", error);
+      console.error("Error fetching Orders:", error);
+      setStyleLoading(false);
     }
   };
 
- 
-  
   useEffect(() => {
     fetchOrders();
     fetchLocation();
-    
   }, []);
 
-  // ✅ Filter Functionality Remains Unchanged
   const applyFilters = (data) => {
-    const uniqueOrders = new Map();
-    const now = new Date(); // Current timestamp
+    const now = new Date();
 
-    data.forEach((item) => {
+    return data.filter((item) => {
       const order = orders.find((o) => o.order_id === item.order_id) || {};
       const itemDateObj = new Date(item.scanned_timestamp);
       const itemDate = itemDateObj.toISOString().split("T")[0];
@@ -140,7 +125,7 @@ const ProductContextProvider = ({ children }) => {
         (filters.time_filter === "this_month" &&
           itemDateObj >= firstDayOfMonth);
 
-      const isMatch =
+      return (
         (!filters.order_id ||
           item.order_id?.toString().includes(filters.order_id)) &&
         (!filters.channel ||
@@ -167,21 +152,24 @@ const ProductContextProvider = ({ children }) => {
         (!filters.start_date ||
           !filters.end_date ||
           (itemDate >= startDate && itemDate <= endDate)) &&
-        isTimeMatch; 
-
-      if (isMatch && !uniqueOrders.has(item.order_id)) {
-        uniqueOrders.set(item.order_id, item);
-      }
+        isTimeMatch
+      );
     });
-
-    return Array.from(uniqueOrders.values());
   };
 
   const filteredOrders = applyFilters(scanTracking);
 
   return (
     <ProductContext.Provider
-      value={{ orders, scanTracking: filteredOrders,scanTracking2, filters, setFilters,loading,styleLoading }}
+      value={{ 
+        orders, 
+        scanTracking: filteredOrders,
+        scanTracking2, 
+        filters, 
+        setFilters,
+        loading,
+        styleLoading 
+      }}
     >
       {children}
     </ProductContext.Provider>

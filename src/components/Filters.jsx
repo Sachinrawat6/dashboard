@@ -3,109 +3,209 @@ import { useGlobalContext } from "./ProductContext";
 export default function Filters() {
   const { filters, setFilters } = useGlobalContext();
 
+  const hours = Array.from({ length: 24 }, (_, i) => i); // Changed to 24 hours
+  const minutes = Array.from({ length: 60 }, (_, i) => i); // Changed to 60 minutes
+
+  const format = (n) => (n < 10 ? `0${n}` : n);
+
   return (
-    <div className=" grid grid-cols-8 gap-4 p-4 bg-gray-100 rounded-md mb-4">
-      <input
-        type="text"
-        placeholder="Order ID"
-        className="p-2 border rounded border-gray-200 bg-yellow-500 text-white outline-0"
-        value={filters.order_id || ""}
-        onChange={(e) => setFilters({ ...filters, order_id: e.target.value })}
-      />
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-8 gap-6">
+      {/* Order ID */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">Order ID</label>
+        <input
+          type="text"
+          placeholder="Search by order ID"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={filters.order_id || ""}
+          onChange={(e) => setFilters({ ...filters, order_id: e.target.value })}
+        />
+      </div>
 
-      <select
-        className="p-2 border rounded border-gray-200 bg-blue-500 text-white outline-0"
-        value={filters.channel || ""}
-        onChange={(e) => setFilters({ ...filters, channel: e.target.value })}
-      >
-        <option value="">Select Channel </option>
-        <option value="Myntra">Myntra </option>
-        <option value="Ajio">Ajio </option>
-        <option value="Tatacliq">Tatacliq </option>
-        <option value="Nykaa">Nykaa </option>
-        <option value="Shoppersstop">Shoppersstop </option>
-        <option value="Shopify">Shopify</option>
-        <option value="Sample">Sample</option>
-        <option value="Tushar">Tushar</option>
-        <option value="Sakshi">Sakshi</option>
-        
-      </select>
+      {/* Channel */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">Channel</label>
+        <select
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={filters.channel || ""}
+          onChange={(e) => setFilters({ ...filters, channel: e.target.value })}
+        >
+          <option value="">All Channels</option>
+          {[
+            "Myntra",
+            "Ajio",
+            "Tatacliq",
+            "Nykaa",
+            "Shoppersstop",
+            "Shopify",
+            "Sample",
+            "Tushar",
+            "Sakshi",
+          ].map((channel) => (
+            <option key={channel} value={channel}>
+              {channel}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <input
-        type="text"
-        placeholder="Style Number"
-        className="p-2 border rounded border-gray-200 bg-yellow-500 text-white outline-0"
-        value={filters.style_number || ""}
-        onChange={(e) =>
-          setFilters({ ...filters, style_number: e.target.value })
-        }
-      />
-      <input
-        type="text"
-        placeholder="Search by name"
-        className="p-2 border rounded border-gray-200 bg-yellow-500 text-white outline-0"
-        value={filters.last_scanner || ""}
-        onChange={(e) =>
-          setFilters({ ...filters, last_scanner: e.target.value })
-        }
-      />
+      {/* Style Number */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">Style Number</label>
+        <input
+          type="text"
+          placeholder="Search by style number"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={filters.style_number || ""}
+          onChange={(e) =>
+            setFilters({ ...filters, style_number: e.target.value })
+          }
+        />
+      </div>
 
-      <select
-        className="p-2 border rounded border-gray-200 bg-blue-500 text-white outline-0"
-        value={filters.location || ""}
-        onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-      >
-        <option value="">Select Location </option>
-        <option value="Cutting Master">Cutting Master </option>
-        <option value="Tailor">Tailor </option>
-        <option value="Kharcha">Kharcha </option>
-        <option value="Kaaj">Kaaj </option>
-        <option value="Shipping Table">Shipping Table </option>
-        <option value="Dhaga Cutting">Dhaga Cutting </option>
-        <option value="Store Helper">Store Helper </option>
-        <option value="Cutting Helper">Cutting Helper </option>
-        <option value="First Checking">First Checking </option>
-        <option value="Final Checking">Final Checking </option>
-        <option value="Ironing & Packing">Ironing & Packing </option>
-        <option value="Pattern Making">Pattern Making </option>
-        <option value="Fabric Checking">Fabric Checking </option>
-      </select>
+      {/* Last Scanner */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">Scanner</label>
+        <input
+          type="text"
+          placeholder="Search by scanner name"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={filters.last_scanner || ""}
+          onChange={(e) =>
+            setFilters({ ...filters, last_scanner: e.target.value })
+          }
+        />
+      </div>
 
-      <select
-        className="p-2 border rounded border-gray-200 bg-blue-500 text-white outline-0"
-        value={filters.time_filter || ""}
-        onChange={(e) =>
-          setFilters({ ...filters, time_filter: e.target.value })
-        }
-      >
-        <option value="">Select Time Range</option>
-        <option value="last_1_hour">Last 1 Hour</option>
-        <option value="last_3_hours">Last 3 Hours</option>
-        <option value="today">Today</option>
-        <option value="yesterday">Yesterday</option>
-        <option value="last_3_days">Last 3 Days</option>
-        <option value="last_7_days">Last 7 Days</option>
-        <option value="this_month">This Month</option>
-      </select>
+      {/* Location */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">Location</label>
+        <select
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={filters.location || ""}
+          onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+        >
+          <option value="">All Locations</option>
+          {[
+            "Cutting Master",
+            "Tailor",
+            "Kharcha",
+            "Kaaj",
+            "Shipping Table",
+            "Dhaga Cutting",
+            "Store Helper",
+            "Cutting Helper",
+            "First Checking",
+            "Final Checking",
+            "Ironing & Packing",
+            "Pattern Making",
+            "Fabric Checking",
+          ].map((location) => (
+            <option key={location} value={location}>
+              {location}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <input
-        type="date"
-        className="p-2 border rounded border-gray-200 bg-yellow-500 text-white outline-0"
-        value={filters.start_date || ""}
-        onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
-      />
-      <input
-        type="date"
-        className="p-2 border rounded border-gray-200 bg-yellow-500 text-white outline-0"
-        value={filters.end_date || ""}
-        onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
-      />
-      <button
-        onClick={() => setFilters({})}
-        className="p-2 bg-red-500 text-white rounded"
-      >
-        Clear Filters
-      </button>
+      {/* Time Filter */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">Time Range</label>
+        <select
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          value={filters.time_filter || ""}
+          onChange={(e) =>
+            setFilters({ ...filters, time_filter: e.target.value })
+          }
+        >
+          <option value="">Select Time Range</option>
+          <option value="last_1_hour">Last 1 Hour</option>
+          <option value="last_3_hours">Last 3 Hours</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="last_3_days">Last 3 Days</option>
+          <option value="last_7_days">Last 7 Days</option>
+          <option value="this_month">This Month</option>
+        </select>
+      </div>
+
+      {/* Start Date + Time */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">Start Date</label>
+        <div className="space-y-2">
+          <input
+            type="date"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={filters.start_date || ""}
+            onChange={(e) =>
+              setFilters({ ...filters, start_date: e.target.value })
+            }
+          />
+          <div className="flex gap-2">
+            <select 
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.start_hours || "00"}
+              onChange={(e) => setFilters({ ...filters, start_hours: e.target.value })}
+            >
+              {hours.map((h) => (
+                <option key={h} value={format(h)}>{format(h)}</option>
+              ))}
+            </select>
+            <select 
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.start_minutes || "00"}
+              onChange={(e) => setFilters({ ...filters, start_minutes: e.target.value })}
+            >
+              {minutes.map((m) => (
+                <option key={m} value={format(m)}>{format(m)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* End Date + Time */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">End Date</label>
+        <div className="space-y-2">
+          <input
+            type="date"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={filters.end_date || ""}
+            onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
+          />
+          <div className="flex gap-2">
+            <select 
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.end_hours || "23"}
+              onChange={(e) => setFilters({ ...filters, end_hours: e.target.value })}
+            >
+              {hours.map((h) => (
+                <option key={h} value={format(h)}>{format(h)}</option>
+              ))}
+            </select>
+            <select 
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.end_minutes || "59"}
+              onChange={(e) => setFilters({ ...filters, end_minutes: e.target.value })}
+            >
+              {minutes.map((m) => (
+                <option key={m} value={format(m)}>{format(m)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Clear Filters */}
+      <div className="flex items-end">
+        <button
+          onClick={() => setFilters({})}
+          className="w-full bg-red-200 hover:bg-red-300 cursor-pointer text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+          Clear Filters
+        </button>
+      </div>
     </div>
   );
 }

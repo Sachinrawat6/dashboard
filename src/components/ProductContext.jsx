@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const ProductContext = createContext();
+
 const ProductContextProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [scanTracking, setScanTracking] = useState([]);
@@ -8,6 +9,7 @@ const ProductContextProvider = ({ children }) => {
   const [filters, setFilters] = useState({});
   const [loading, setLoading] = useState(true);
   const [styleLoading, setStyleLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const MAX_RECORDS = 7000;
   const BATCH_SIZE = 500;
@@ -15,145 +17,176 @@ const ProductContextProvider = ({ children }) => {
     "xc-token": "LsOnEY-1wS4Nqjz15D1_gxHu0pFVcmA_5LNqCAqK",
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
   const fetchLocation = async () => {
-    let allLocations = [];
-    const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
-
     try {
-      for (let i = 0; i < totalBatches; i += 5) {
-        const batchPromises = [];
-        for (let j = 0; j < 5 && (i + j) < totalBatches; j++) {
-          batchPromises.push(
-            fetch(
-              `https://nocodb.qurvii.com/api/v2/tables/mhhxiprapvyqjtf/records?offset=${(i + j) * BATCH_SIZE}&limit=${BATCH_SIZE}&viewId=vw7oelmdnxn5leeh`,
-              { method: "GET", headers: API_HEADERS }
-            ).then((res) => res.json())
-          );
-        }
+      let allLocations = [];
+      const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
 
-        const batchResults = await Promise.all(batchPromises);
-        const batchRecords = batchResults.flatMap((data) => data.list || []);
-        allLocations = [...allLocations, ...batchRecords];
-
+      for (let i = 0; i < totalBatches; i++) {
+        const response = await fetch(
+          `https://nocodb.qurvii.com/api/v2/tables/mhhxiprapvyqjtf/records?offset=${i * BATCH_SIZE}&limit=${BATCH_SIZE}&viewId=vw7oelmdnxn5leeh`,
+          { method: "GET", headers: API_HEADERS }
+        );
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        allLocations = [...allLocations, ...(data.list || [])];
+        
         if (allLocations.length >= MAX_RECORDS) break;
       }
 
       setScanTracking(allLocations);
       setScanTracking2(allLocations);
+      setError(null);
     } catch (error) {
       console.error("Error fetching Locations:", error);
+      setError("Failed to load locations data");
     }
   };
 
   const fetchOrders = async () => {
     setStyleLoading(true);
-    let allOrders = [];
-    const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
-
     try {
-      for (let i = 0; i < totalBatches; i += 5) {
-        const batchPromises = [];
-        for (let j = 0; j < 5 && (i + j) < totalBatches; j++) {
-          batchPromises.push(
-            fetch(
-              `https://nocodb.qurvii.com/api/v2/tables/m5rt138j272atfc/records?offset=${(i + j) * BATCH_SIZE}&limit=${BATCH_SIZE}&viewId=vwi961elxbm8g0gr`,
-              { method: "GET", headers: API_HEADERS }
-            ).then((res) => res.json())
-          );
-        }
+      let allOrders = [];
+      const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
 
-        const batchResults = await Promise.all(batchPromises);
-        const batchRecords = batchResults.flatMap((data) => data.list || []);
-        allOrders = [...allOrders, ...batchRecords];
-
+      for (let i = 0; i < totalBatches; i++) {
+        const response = await fetch(
+          `https://nocodb.qurvii.com/api/v2/tables/m5rt138j272atfc/records?offset=${i * BATCH_SIZE}&limit=${BATCH_SIZE}&viewId=vwi961elxbm8g0gr`,
+          { method: "GET", headers: API_HEADERS }
+        );
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        allOrders = [...allOrders, ...(data.list || [])];
+        
         if (allOrders.length >= MAX_RECORDS) break;
       }
 
       setOrders(allOrders);
-      setStyleLoading(false);
+      setError(null);
     } catch (error) {
       console.error("Error fetching Orders:", error);
+      setError("Failed to load orders data");
+    } finally {
       setStyleLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
-    fetchLocation();
+    const loadData = async () => {
+      try {
+        await Promise.all([fetchOrders(), fetchLocation()]);
+      } catch (error) {
+        console.error('Initial data load failed:', error);
+        setError("Initial data load failed");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
   }, []);
 
   const applyFilters = (data) => {
+    if (!data || !data.length) return [];
+    
     const now = new Date();
+    console.log('Applying filters:', filters);
 
     return data.filter((item) => {
-      const order = orders.find((o) => o.order_id === item.order_id) || {};
-      const itemDateObj = new Date(item.scanned_timestamp);
-      const itemDate = itemDateObj.toISOString().split("T")[0];
+      try {
+        if (!item.scanned_timestamp) return false;
+        
+        const order = orders.find((o) => o.order_id === item.order_id) || {};
+        const itemDateObj = new Date(item.scanned_timestamp);
+        
+        if (isNaN(itemDateObj.getTime())) {
+          console.warn('Invalid date for item:', item);
+          return false;
+        }
+        
+        const itemTime = itemDateObj.getTime();
 
-      const startDate = filters.start_date
-        ? new Date(filters.start_date).toISOString().split("T")[0]
-        : null;
-      const endDate = filters.end_date
-        ? new Date(filters.end_date).toISOString().split("T")[0]
-        : null;
+        // Date range filtering
+        let startDate = filters.start_date ? new Date(filters.start_date) : null;
+        let endDate = filters.end_date ? new Date(filters.end_date) : null;
 
-      const last1Hour = new Date(now.getTime() - 1 * 60 * 60 * 1000);
-      const last3Hours = new Date(now.getTime() - (3 * 60 * 60 * 1000));
-      const today = new Date(now.setHours(0, 0, 0, 0));
-      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-      const last3Days = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-      const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        // Apply time components if dates exist
+        if (startDate) {
+          const startHours = filters.start_hours ? parseInt(filters.start_hours) : 0;
+          const startMinutes = filters.start_minutes ? parseInt(filters.start_minutes) : 0;
+          startDate.setHours(startHours, startMinutes, 0, 0);
+        }
+        
+        if (endDate) {
+          const endHours = filters.end_hours ? parseInt(filters.end_hours) : 23;
+          const endMinutes = filters.end_minutes ? parseInt(filters.end_minutes) : 59;
+          endDate.setHours(endHours, endMinutes, 59, 999);
+        }
 
-      const isTimeMatch =
-        !filters.time_filter ||
-        (filters.time_filter === "last_1_hour" && itemDateObj >= last1Hour) ||
-        (filters.time_filter === "last_3_hours" && itemDateObj >= last3Hours) ||
-        (filters.time_filter === "today" && itemDateObj >= today) ||
-        (filters.time_filter === "yesterday" &&
-          itemDateObj >= yesterday &&
-          itemDateObj < today) ||
-        (filters.time_filter === "last_3_days" && itemDateObj >= last3Days) ||
-        (filters.time_filter === "last_7_days" && itemDateObj >= last7Days) ||
-        (filters.time_filter === "this_month" &&
-          itemDateObj >= firstDayOfMonth);
+        // Time range presets
+        const last1Hour = new Date(now.getTime() - 1 * 60 * 60 * 1000);
+        const last3Hours = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+        const today = new Date(now);
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const last3Days = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+        const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      return (
-        (!filters.order_id ||
-          item.order_id?.toString().includes(filters.order_id)) &&
-        (!filters.channel ||
-          (order?.channel &&
-            order.channel
-              .toString()
-              .toLowerCase()
-              .includes(filters.channel.toLowerCase()))) &&
-        (!filters.style_number ||
-          (order?.style_number &&
-            order.style_number
-              .toString()
-              .includes(filters.style_number.toLowerCase()))) &&
-        (!filters.last_scanner ||
-          (item.employees?.user_name &&
-            item.employees.user_name
-              .toLowerCase()
-              .includes(filters.last_scanner.toLowerCase()))) &&
-        (!filters.location ||
-          (item.locations?.name &&
-            item.locations.name
-              .toLowerCase()
-              .includes(filters.location.toLowerCase()))) &&
-        (!filters.start_date ||
-          !filters.end_date ||
-          (itemDate >= startDate && itemDate <= endDate)) &&
-        isTimeMatch
-      );
+        // Time filter matching
+        let timeFilterMatch = true;
+        if (filters.time_filter) {
+          switch (filters.time_filter) {
+            case "last_1_hour":
+              timeFilterMatch = itemTime >= last1Hour.getTime();
+              break;
+            case "last_3_hours":
+              timeFilterMatch = itemTime >= last3Hours.getTime();
+              break;
+            case "today":
+              timeFilterMatch = itemTime >= today.getTime();
+              break;
+            case "yesterday":
+              timeFilterMatch = itemTime >= yesterday.getTime() && itemTime < today.getTime();
+              break;
+            case "last_3_days":
+              timeFilterMatch = itemTime >= last3Days.getTime();
+              break;
+            case "last_7_days":
+              timeFilterMatch = itemTime >= last7Days.getTime();
+              break;
+            case "this_month":
+              timeFilterMatch = itemTime >= firstDayOfMonth.getTime();
+              break;
+            default:
+              timeFilterMatch = true;
+          }
+        }
+
+        // Date range matching
+        const dateRangeMatch = 
+          (!startDate || itemTime >= startDate.getTime()) &&
+          (!endDate || itemTime <= endDate.getTime());
+
+        // All conditions
+        return (
+          (!filters.order_id || item.order_id?.toString().includes(filters.order_id)) &&
+          (!filters.channel || (order?.channel && order.channel.toString().toLowerCase().includes(filters.channel.toLowerCase()))) &&
+          (!filters.style_number || (order?.style_number && order.style_number.toString().includes(filters.style_number.toLowerCase()))) &&
+          (!filters.last_scanner || (item.employees?.user_name && item.employees.user_name.toLowerCase().includes(filters.last_scanner.toLowerCase()))) &&
+          (!filters.location || (item.locations?.name && item.locations.name.toLowerCase().includes(filters.location.toLowerCase()))) &&
+          timeFilterMatch &&
+          dateRangeMatch
+        );
+      } catch (error) {
+        console.error('Error filtering item:', item, error);
+        return false;
+      }
     });
   };
 
@@ -168,7 +201,10 @@ const ProductContextProvider = ({ children }) => {
         filters, 
         setFilters,
         loading,
-        styleLoading 
+        styleLoading,
+        error,
+        fetchOrders,
+        fetchLocation
       }}
     >
       {children}
