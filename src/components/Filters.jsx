@@ -177,7 +177,7 @@ export default function Filters() {
           <div className="flex gap-2">
             <select 
               className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={filters.end_hours || "23"}
+              value={filters.end_hours || "00"}
               onChange={(e) => setFilters({ ...filters, end_hours: e.target.value })}
             >
               {hours.map((h) => (
@@ -186,7 +186,7 @@ export default function Filters() {
             </select>
             <select 
               className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={filters.end_minutes || "59"}
+              value={filters.end_minutes || "00"}
               onChange={(e) => setFilters({ ...filters, end_minutes: e.target.value })}
             >
               {minutes.map((m) => (

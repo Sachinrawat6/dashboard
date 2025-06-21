@@ -17,9 +17,12 @@ export default function Reports() {
     if (scanTracking.length > 0) {
       const scansByOrder = {};
 
-      scanTracking.forEach(scan => {
-        if (!scansByOrder[scan.order_id] || 
-            new Date(scan.scanned_timestamp) > new Date(scansByOrder[scan.order_id].scanned_timestamp)) {
+      scanTracking.forEach((scan) => {
+        if (
+          !scansByOrder[scan.order_id] ||
+          new Date(scan.scanned_timestamp) >
+            new Date(scansByOrder[scan.order_id].scanned_timestamp)
+        ) {
           scansByOrder[scan.order_id] = scan;
         }
       });
@@ -35,7 +38,8 @@ export default function Reports() {
   const currentOrders = latestScans.slice(indexOfFirstItem, indexOfLastItem);
 
   const handlePrev = () => currentPage > 1 && setCurrentPage(currentPage - 1);
-  const handleNext = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
+  const handleNext = () =>
+    currentPage < totalPages && setCurrentPage(currentPage + 1);
 
   const toggleSelection = (order) => {
     setSelectedOrders((prev) => {
@@ -54,124 +58,215 @@ export default function Reports() {
 
   // Corrected scanner name extraction
   const getScannerName = (order) => {
-  try {
-    const extractName = (name) => {
-      // Ensure it's a string and return part before " / " if present
-      return typeof name === 'string' ? name.split(" / ")[0] : "N/A";
-    };
+    try {
+      const extractName = (name) => {
+        // Ensure it's a string and return part before " / " if present
+        return typeof name === "string" ? name.split(" / ")[0] : "N/A";
+      };
 
-    if (order.employees && typeof order.employees === 'object') {
-      if (order.employees.value && order.employees.value.user_name) {
-        return extractName(order.employees.value.user_name);
+      if (order.employees && typeof order.employees === "object") {
+        if (order.employees.value && order.employees.value.user_name) {
+          return extractName(order.employees.value.user_name);
+        }
+        if (order.employees.user_name) {
+          return extractName(order.employees.user_name);
+        }
       }
-      if (order.employees.user_name) {
-        return extractName(order.employees.user_name);
+
+      if (typeof order.employees === "string") {
+        const parsed = JSON.parse(order.employees);
+        if (parsed.value && parsed.value.user_name) {
+          return extractName(parsed.value.user_name);
+        }
+        if (parsed.user_name) {
+          return extractName(parsed.user_name);
+        }
       }
+
+      return "N/A";
+    } catch (e) {
+      return "N/A";
     }
-
-    if (typeof order.employees === 'string') {
-      const parsed = JSON.parse(order.employees);
-      if (parsed.value && parsed.value.user_name) {
-        return extractName(parsed.value.user_name);
-      }
-      if (parsed.user_name) {
-        return extractName(parsed.user_name);
-      }
-    }
-
-    return "N/A";
-  } catch (e) {
-    return "N/A";
-  }
-};
-
+  };
 
   const exportToCSV = () => {
     const csvData = latestScans.map((order) => ({
       "Order ID": order.order_id,
-      Channel: orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
+      Channel:
+        orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
       "Style Number": order.orders_2?.style_number || "N/A",
       Size: orders.find((o) => o.order_id === order.order_id)?.size || "N/A",
       "Last Scanner": getScannerName(order),
       Location: order.locations?.name || "N/A",
       "Last Scan": order.scanned_timestamp || "N/A",
-      Status: order.locations?.name?.includes("Shipping Table") ? "Shipped" : "Pending",
+      Status: order.locations?.name?.includes("Shipping Table")
+        ? "Shipped"
+        : "Pending",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(csvData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
     const data = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(data, "orders_report.xlsx");
   };
 
-  const exportToPDF = () => {
-    if (selectedOrders.length === 0) {
-      alert("Please select at least one order to export!");
-      return;
-    }
+  // const exportToPDF = () => {
+  //   if (selectedOrders.length === 0) {
+  //     alert("Please select at least one order to export!");
+  //     return;
+  //   }
 
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Orders Report", 14, 16);
-    doc.setFontSize(10);
+  //   const doc = new jsPDF();
+  //   doc.setFontSize(16);
+  //   doc.text("Orders Report", 14, 16);
+  //   doc.setFontSize(10);
 
-    const headers = [
-      ["Sr.No", "Channel", "Order Id", "Sku", "Scanner", "Location",  "Time"]
-    ];
+  //   const headers = [
+  //     ["Sr.No", "Channel", "Order Id", "Sku", "Scanner", "Location", "Time"],
+  //   ];
 
-    const rows = selectedOrders
-    .filter((item)=>!(item.locations?.name?.includes("Shipping Table")))
-    
-    .map((order, i) => [
-      i + 1,
-      orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
-      order.order_id || "N/A",
-      `${order.orders_2?.style_number}-${orders.find((o) => o.order_id === order.order_id)?.size }` || "N/A",
-      // orders.find((o) => o.order_id === order.order_id)?.size || "N/A",
-      getScannerName(order),
-      order.locations?.name?.split(" / ")[0] || "N/A",
-      // order.locations?.name?.includes("Shipping Table") ? "Shipped" : "Pending"
-       new Date(order.scanned_timestamp).toLocaleString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })
-    ]);
+  //   const rows = selectedOrders
+  //     .filter((item) => !item.locations?.name?.includes("Shipping Table"))
 
-    autoTable(doc, {
-      head: headers,
-      body: rows,
-      startY: 25,
-      styles: { 
-        fontSize: 9,
-        cellPadding: 3,
-        valign: 'middle'
-      },
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: 15 },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 32 },
-        6: { cellWidth: 50 },
-        // 7: { cellWidth: 20 }
-      },
-      margin: { top: 20 }
+  //     .map((order, i) => [
+  //       i + 1,
+  //       orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
+  //       order.order_id || "N/A",
+  //       `${order.orders_2?.style_number}-${
+  //         orders.find((o) => o.order_id === order.order_id)?.size
+  //       }` || "N/A",
+  //       // orders.find((o) => o.order_id === order.order_id)?.size || "N/A",
+  //       getScannerName(order),
+  //       order.locations?.name?.split(" / ")[0] || "N/A",
+  //       // order.locations?.name?.includes("Shipping Table") ? "Shipped" : "Pending"
+  //       new Date(order.scanned_timestamp).toLocaleString("en-IN", {
+  //         day: "2-digit",
+  //         month: "short",
+  //         year: "numeric",
+  //         hour: "2-digit",
+  //         minute: "2-digit",
+  //         hour12: true,
+  //       }),
+  //     ]);
+
+  //   autoTable(doc, {
+  //     head: headers,
+  //     body: rows,
+  //     startY: 25,
+  //     styles: {
+  //       fontSize: 9,
+  //       cellPadding: 3,
+  //       valign: "middle",
+  //     },
+  //     headStyles: {
+  //       fillColor: [41, 128, 185],
+  //       textColor: 255,
+  //       fontStyle: "bold",
+  //     },
+  //     columnStyles: {
+  //       0: { cellWidth: 15 },
+  //       1: { cellWidth: 25 },
+  //       2: { cellWidth: 25 },
+  //       3: { cellWidth: 30 },
+  //       4: { cellWidth: 25 },
+  //       5: { cellWidth: 32 },
+  //       6: { cellWidth: 50 },
+  //       // 7: { cellWidth: 20 }
+  //     },
+  //     margin: { top: 20 },
+  //   });
+
+  //   doc.save("orders_report.pdf");
+  // };
+ const exportToPDF = () => {
+  if (selectedOrders.length === 0) {
+    alert("Please select at least one order to export!");
+    return;
+  }
+
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text("Orders Report", 14, 16);
+  doc.setFontSize(10);
+
+  const headers = [
+    ["Sr.No", "Channel", "Order Id", "Sku", "Scanner", "Location", "Time"],
+  ];
+
+  // Sort the selected orders by date (descending) and then by style number (descending)
+  const sortedOrders = [...selectedOrders]
+    .filter((item) => !item.locations?.name?.includes("Shipping Table"))
+    .sort((a, b) => {
+      // First sort by date (newest first)
+      const dateA = new Date(a.scanned_timestamp).getTime();
+      const dateB = new Date(b.scanned_timestamp).getTime();
+      
+      if (dateB !== dateA) {
+        return dateB - dateA;
+      }
+      
+      // If dates are equal, sort by style number (descending)
+      // const styleNumA = orders.find(o => o.order_id === a.order_id)?.style_number || "";
+      // const styleNumB = orders.find(o => o.order_id === b.order_id)?.style_number || "";
+      
+      // return styleNumB.localeCompare(styleNumA);
+      // return styleNumA - styleNumA ;
     });
 
-    doc.save("orders_report.pdf");
-  };
+  const rows = sortedOrders.map((order, i) => [
+    i + 1,
+    orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
+    order.order_id || "N/A",
+    `${order.orders_2?.style_number}-${
+      orders.find((o) => o.order_id === order.order_id)?.size
+    }` || "N/A",
+    getScannerName(order),
+    order.locations?.name?.split(" / ")[0] || "N/A",
+    new Date(order.scanned_timestamp).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }),
+  ]);
+
+  autoTable(doc, {
+    head: headers,
+    body: rows,
+    startY: 25,
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+      valign: "middle",
+    },
+    headStyles: {
+      fillColor: [41, 128, 185],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+    columnStyles: {
+      0: { cellWidth: 15 },
+      1: { cellWidth: 25 },
+      2: { cellWidth: 25 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 25 },
+      5: { cellWidth: 32 },
+      6: { cellWidth: 50 },
+    },
+    margin: { top: 20 },
+  });
+
+  doc.save("orders_report.pdf");
+};
+
+
 
   if (loading) {
     return (
@@ -189,14 +284,26 @@ export default function Reports() {
 
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Order Tracking Report</h2>
+          <h2 className="text-2xl font-semibold text-gray-800">
+            Order Tracking Report
+          </h2>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={exportToCSV}
               className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               Export to Excel
             </button>
@@ -209,8 +316,18 @@ export default function Reports() {
                   : "bg-red-500 text-white hover:bg-red-600"
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               Export to PDF
             </button>
@@ -219,7 +336,9 @@ export default function Reports() {
 
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
           <div className="text-sm text-gray-600">
-            Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, latestScans.length)} of {latestScans.length} records
+            Showing {indexOfFirstItem + 1}-
+            {Math.min(indexOfLastItem, latestScans.length)} of{" "}
+            {latestScans.length} records
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -258,30 +377,56 @@ export default function Reports() {
                   <input
                     type="checkbox"
                     onChange={handleSelectAll}
-                    checked={selectedOrders.length === latestScans.length && latestScans.length > 0}
+                    checked={
+                      selectedOrders.length === latestScans.length &&
+                      latestScans.length > 0
+                    }
                     className="rounded text-blue-500 focus:ring-blue-400"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Style</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scanner</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Scan</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  #
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Order ID
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Channel
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Style
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Size
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Scanner
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Location
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Scan
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentOrders.map((order, i) => {
-                const matchingData = orders.find(item => item.order_id === order.order_id) || {};
-                const isSelected = selectedOrders.some(o => o.order_id === order.order_id);
-                
+                const matchingData =
+                  orders.find((item) => item.order_id === order.order_id) || {};
+                const isSelected = selectedOrders.some(
+                  (o) => o.order_id === order.order_id
+                );
+
                 return (
-                  <tr 
-                    key={`order-${i}`} 
-                    className={`${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  <tr
+                    key={`order-${i}`}
+                    className={`${
+                      isSelected ? "bg-blue-50" : "hover:bg-gray-50"
+                    }`}
                   >
                     <td className="px-4 py-3 whitespace-nowrap">
                       <input
@@ -298,30 +443,41 @@ export default function Reports() {
                       {order.order_id}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {matchingData.channel || <span className="text-gray-300">N/A</span>}
+                      {matchingData.channel || (
+                        <span className="text-gray-300">N/A</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {order.orders_2?.style_number || <span className="text-gray-300">N/A</span>}
+                      {order.orders_2?.style_number || (
+                        <span className="text-gray-300">N/A</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {matchingData.size || <span className="text-gray-300">N/A</span>}
+                      {matchingData.size || (
+                        <span className="text-gray-300">N/A</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {getScannerName(order)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {order.locations?.name || <span className="text-gray-300">N/A</span>}
+                      {order.locations?.name || (
+                        <span className="text-gray-300">N/A</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {order.scanned_timestamp ? (
-                        new Date(order.scanned_timestamp).toLocaleString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })
+                        new Date(order.scanned_timestamp).toLocaleString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          }
+                        )
                       ) : (
                         <span className="text-gray-300">N/A</span>
                       )}
