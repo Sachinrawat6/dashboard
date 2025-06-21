@@ -3,8 +3,8 @@ import { useGlobalContext } from "./ProductContext";
 export default function Filters() {
   const { filters, setFilters } = useGlobalContext();
 
-  const hours = Array.from({ length: 24 }, (_, i) => i); // Changed to 24 hours
-  const minutes = Array.from({ length: 60 }, (_, i) => i); // Changed to 60 minutes
+  const hours = Array.from({ length: 24 }, (_, i) => i);
+  const minutes = Array.from({ length: 60 }, (_, i) => i);
 
   const format = (n) => (n < 10 ? `0${n}` : n);
 
@@ -129,9 +129,9 @@ export default function Filters() {
         </select>
       </div>
 
-      {/* Start Date + Time */}
+      {/* Last Scan Start Date + Time */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">Start Date</label>
+        <label className="block text-sm font-medium text-gray-700">LastScan SD</label>
         <div className="space-y-2">
           <input
             type="date"
@@ -164,9 +164,9 @@ export default function Filters() {
         </div>
       </div>
 
-      {/* End Date + Time */}
+      {/* Last Scan End Date + Time */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">End Date</label>
+        <label className="block text-sm font-medium text-gray-700">LastScan ED</label>
         <div className="space-y-2">
           <input
             type="date"
@@ -177,7 +177,7 @@ export default function Filters() {
           <div className="flex gap-2">
             <select 
               className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={filters.end_hours || "00"}
+              value={filters.end_hours || "23"}
               onChange={(e) => setFilters({ ...filters, end_hours: e.target.value })}
             >
               {hours.map((h) => (
@@ -186,7 +186,7 @@ export default function Filters() {
             </select>
             <select 
               className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={filters.end_minutes || "00"}
+              value={filters.end_minutes || "59"}
               onChange={(e) => setFilters({ ...filters, end_minutes: e.target.value })}
             >
               {minutes.map((m) => (
@@ -197,8 +197,90 @@ export default function Filters() {
         </div>
       </div>
 
+      {/* Created At Start Date + Time */}
+      {/* <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">CreatedAt SD</label>
+        <div className="space-y-2">
+          <input
+            type="date"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={filters.created_start_date || ""}
+            onChange={(e) =>
+              setFilters({ 
+                ...filters, 
+                created_start_date: e.target.value,
+                // Reset time when date changes if not already set
+                created_start_hours: filters.created_start_hours || "00",
+                created_start_minutes: filters.created_start_minutes || "00"
+              })
+            }
+          />
+          <div className="flex gap-2">
+            <select 
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.created_start_hours || "00"}
+              onChange={(e) => setFilters({ ...filters, created_start_hours: e.target.value })}
+            >
+              {hours.map((h) => (
+                <option key={h} value={format(h)}>{format(h)}</option>
+              ))}
+            </select>
+            <select 
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.created_start_minutes || "00"}
+              onChange={(e) => setFilters({ ...filters, created_start_minutes: e.target.value })}
+            >
+              {minutes.map((m) => (
+                <option key={m} value={format(m)}>{format(m)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div> */}
+
+      {/* Created At End Date + Time */}
+      {/* <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">CreatedAt ED</label>
+        <div className="space-y-2">
+          <input
+            type="date"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={filters.created_end_date || ""}
+            onChange={(e) => 
+              setFilters({ 
+                ...filters, 
+                created_end_date: e.target.value,
+                // Reset time when date changes if not already set
+                created_end_hours: filters.created_end_hours || "23",
+                created_end_minutes: filters.created_end_minutes || "59"
+              })
+            }
+          />
+          <div className="flex gap-2">
+            <select 
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.created_end_hours || "23"}
+              onChange={(e) => setFilters({ ...filters, created_end_hours: e.target.value })}
+            >
+              {hours.map((h) => (
+                <option key={h} value={format(h)}>{format(h)}</option>
+              ))}
+            </select>
+            <select 
+              className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.created_end_minutes || "59"}
+              onChange={(e) => setFilters({ ...filters, created_end_minutes: e.target.value })}
+            >
+              {minutes.map((m) => (
+                <option key={m} value={format(m)}>{format(m)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div> */}
+
       {/* Clear Filters */}
-      <div className="flex items-end">
+      <div className="flex items-end col-span-full">
         <button
           onClick={() => setFilters({})}
           className="w-full bg-red-200 hover:bg-red-300 cursor-pointer text-gray-800 font-medium py-2 px-4 rounded-md shadow-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"

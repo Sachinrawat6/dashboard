@@ -1,78 +1,101 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LayoutDashboard, FileText, User } from "lucide-react";
+import { Menu, X, LayoutDashboard, FileText, User, Package } from "lucide-react";
 
 function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
-  const location = useLocation(); // Get current route
+  const location = useLocation();
+  const [activeHover, setActiveHover] = useState(null);
+
+  // Navigation items configuration
+  const navItems = [
+    { path: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/reports", icon: FileText, label: "Pending Report" },
+    { path: "/products", icon: Package, label: "View Products", hidden: true },
+    { path: "/status", icon: User, label: "Employee Status" },
+    { path: "/orders", icon: FileText, label: "Orders Report" }
+  ];
 
   return (
     <div className="flex">
       <div
         className={`${
           isOpen ? "w-64" : "w-20"
-        } h-screen bg-gray-800 text-white transition-all duration-300 p-4`}
+        } h-screen bg-gray-900 text-white transition-all duration-300 ease-in-out flex flex-col border-r border-gray-700`}
       >
-        <button onClick={() => setIsOpen(!isOpen)} className="mb-6">
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Header */}
+        <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+          {isOpen ? (
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 rounded-md truncate">
+               Dashboard
+            </h1>
+          ) : (
+            <div className="w-10 h-10 rounded-md bg-blue-500 flex items-center justify-center">
+              <span className="font-bold text-white">ED</span>
+            </div>
+          )}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+            aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {isOpen ? (
+              <X size={20} className="text-gray-300" />
+            ) : (
+              <Menu size={20} className="text-gray-300" />
+            )}
+          </button>
+        </div>
 
-        <nav className="space-y-4">
-          <h1 className="text-center font-bold bg-blue-400 p-3 truncate rounded-md text-white">
-            Employee Dashboard
-          </h1>
-
-          <Link
-            to="/"
-            className={`flex items-center space-x-2 p-3 rounded-lg ${
-              location.pathname === "/" ? "bg-gray-700" : "hover:bg-gray-700"
-            }`}
-          >
-            <LayoutDashboard size={20} />
-            {isOpen && <span>Dashboard</span>}
-          </Link>
-          <Link
-            to="/reports"
-            className={`flex items-center space-x-2 p-3 rounded-lg ${
-              location.pathname === "/reports" ? "bg-gray-700" : "hover:bg-gray-700"
-            }`}
-          >
-            <FileText size={20} />
-            {isOpen && <span>View Reports</span>}
-          </Link>
-
-          <Link
-            to="/products"
-            className={` items-center hidden space-x-2 p-3 rounded-lg ${
-              location.pathname === "/products" ? "bg-gray-700" : "hover:bg-gray-700"
-            }`}
-          >
-            <FileText size={20} />
-            {isOpen && <span>View Products</span>}
-          </Link>
-          
-         
-            <Link
-            to="/status"
-            className={`flex items-center space-x-2 p-3 rounded-lg ${
-              location.pathname === "/status" ? "bg-gray-700" : "hover:bg-gray-700"
-            }`}
-          >
-            <User size={20} />
-            {isOpen && <span>Employee Status</span>}
-          </Link>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+          {navItems.map((item) => {
+            if (item.hidden) return null;
             
-          <Link
-            to="/orders"
-            className={`flex items-center space-x-2 p-3 rounded-lg ${
-              location.pathname === "/orders" ? "bg-gray-700" : "hover:bg-gray-700"
-            }`}
-          >
-            <FileText size={20} />
-            {isOpen && <span>Orders Preport</span>}
-          </Link>
-
+            const isActive = location.pathname === item.path;
+            const isHovered = activeHover === item.path;
+            
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center p-3 rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? "bg-blue-600/20 text-blue-400 border-l-4 border-blue-500"
+                    : "hover:bg-gray-800/50 text-gray-300"
+                } ${isOpen ? "justify-start" : "justify-center"}`}
+                onMouseEnter={() => setActiveHover(item.path)}
+                onMouseLeave={() => setActiveHover(null)}
+              >
+                <item.icon
+                  size={20}
+                  className={`flex-shrink-0 ${
+                    isActive ? "text-blue-400" : "text-gray-400"
+                  } ${isHovered && !isActive ? "text-white" : ""}`}
+                />
+                {isOpen && (
+                  <span
+                    className={`ml-3 ${
+                      isActive ? "font-medium" : "font-normal"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                )}
+                {!isOpen && isHovered && (
+                  <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-md shadow-lg z-10 whitespace-nowrap">
+                    {item.label}
+                  </div>
+                )}
+              </Link>
+            );
+          })}
         </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-700 text-xs text-gray-500 text-center">
+          {isOpen ? "v1.0.0 © 2023" : "v1.0.0"}
+        </div>
       </div>
     </div>
   );

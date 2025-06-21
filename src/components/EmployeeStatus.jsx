@@ -3,7 +3,7 @@ import { useGlobalContext } from './ProductContext';
 import Filters from "./Filters";
 
 const EmployeeStatus = () => {
-  const { scanTracking,loading } = useGlobalContext();
+  const { scanTracking, loading } = useGlobalContext();
   const [summary, setSummary] = useState({});
   const [employeeTotals, setEmployeeTotals] = useState({});
 
@@ -11,7 +11,6 @@ const EmployeeStatus = () => {
     processScanData();
   }, [scanTracking]);
 
-  // Process scanTracking data to get daily order counts per employee
   const processScanData = () => {
     let orderSummary = {};
     let employeeOrderTotals = {};
@@ -33,7 +32,6 @@ const EmployeeStatus = () => {
 
       orderSummary[employeeName][orderDate].add(order_id);
 
-      // Count total unique orders per employee
       if (!employeeOrderTotals[employeeName]) {
         employeeOrderTotals[employeeName] = new Set();
       }
@@ -56,53 +54,95 @@ const EmployeeStatus = () => {
     setSummary(finalSummary);
     setEmployeeTotals(totalOrdersPerEmployee);
   };
-  if (loading)
-    return (
-    
-      <>
-      <div className="container mx-auto grid items-center justify-center">
-          <span className="w-20 h-20 border-b-2 border-t-2 duration-100 ease-in animate-spin border-blue-500 rounded-full"> </span>
-      </div>
-    </>
-    
-    );
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Employee Order Summary</h2>
-      <Filters />
 
-      <table className="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-200 border-gray-400">
-            <th className="border border-gray-300 text-left p-2">Employee Name</th>
-            <th className="border border-gray-300 p-2">Date</th>
-            <th className="border border-gray-300 p-2">Total Orders Scanned</th>
-            <th className="border border-gray-300 p-2">Total Orders (Overall)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.keys(summary).map((employee, index) =>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+         
+          <div className="mt-4 md:mt-0">
+            <Filters />
+          </div>
           
-            Object.keys(summary[employee]).map((date, dateIndex) => (
-             
-              <tr key={`${employee}-${date}`} className="text-center hover:bg-gray-100 cursor-pointer">
-                <td className="border border-gray-200 text-left text-blue-500 p-2">
-                  {employee}
-                </td>
-                <td className="border border-gray-200 p-2">{date}</td>
-                <td className="border border-gray-200 p-2">{summary[employee][date]}</td>
-                {dateIndex === 0 && (
-                  <td className="border border-gray-200  p-2 font-bold" rowSpan={Object.keys(summary[employee]).length}>
-                    {employeeTotals[employee]}
-                  </td>
-                  
-                )}
-                
+        </div>
+
+        <div className="overflow-x-auto">
+           <h2 className="text-2xl font-bold text-gray-800">Employee Performance Dashboard</h2>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Employee
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Daily Scans
+                </th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total Scans
+                </th>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {Object.keys(summary).map((employee) =>
+                Object.keys(summary[employee]).map((date, dateIndex) => (
+                  <tr key={`${employee}-${date}`} className="hover:bg-gray-50 transition-colors duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-medium">
+                            {employee.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{employee}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{new Date(date).toLocaleDateString()}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        {summary[employee][date]}
+                      </span>
+                    </td>
+                    {dateIndex === 0 && (
+                      <td className="px-6 py-4 whitespace-nowrap text-center" rowSpan={Object.keys(summary[employee]).length}>
+                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {employeeTotals[employee]}
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {Object.keys(summary).length === 0 && !loading && (
+          <div className="text-center py-12">
+            <div className="text-gray-500 mb-4">
+              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900">No data available</h3>
+            <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or check back later.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

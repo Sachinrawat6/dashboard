@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useGlobalContext } from "./ProductContext";
 
 const EmpDashboard = () => {
-  const { scanTracking2, orders,loading,styleLoading } = useGlobalContext();
+  const { scanTracking2, orders, loading, styleLoading } = useGlobalContext();
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -28,21 +28,12 @@ const EmpDashboard = () => {
   const foundInInventory = filteredOrders.filter(order => order.status === "shipped").length;
   const cutting = filteredOrders.filter(order => order.status === "pending").length;
 
-  // const shippingOrderIds = new Set(
-  //   filteredTracking
-  //     .filter(track => track.locations?.some(location => location.name?.toLowerCase().includes("shipping")))
-  //     .map(track => track.order_id)
-  // );
-
-
   const shippingOrderIds = new Set(
     scanTracking2
       .filter((track) => track.locations?.name?.includes("Shipping Table"))
       .map((track) => track.order_id)
   );
   const ship = filteredOrders.filter(order => shippingOrderIds.has(order.order_id)).length;
-  // const ship = filteredOrders.filter(order => order.status==="shipped").length;
-
 
   const portals = ["Myntra", "Ajio", "TataCliq", "ShoppersStop", "Nykaa", "Shopify"];
   const portalStats = portals.map((portal) => {
@@ -50,67 +41,115 @@ const EmpDashboard = () => {
     const inventoryByPortal = filteredOrders.filter(order => order.status === "shipped" && order.channel.includes(portal)).length;
     const cuttingByPortal = filteredOrders.filter(order => order.status === "pending" && order.channel.includes(portal)).length;
     const shipByPortal = filteredOrders.filter(order => shippingOrderIds.has(order.order_id) && order.channel.includes(portal)).length;
-    // const shipByPortal = filteredOrders.filter(order => order.status ==="shipped" && order.channel.includes(portal)).length;
     return { portal, ordersByPortal, inventoryByPortal, cuttingByPortal, shipByPortal };
   });
 
-  if(loading){
-    return <>
-    <div className="container mx-auto grid items-center justify-center">
-        <span className="w-20 h-20 border-b-2 border-t-2 duration-100 ease-in animate-spin border-blue-500 rounded-full"> </span>
-    </div>
-  </>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
-   <div className="p-4">
-      <div className="flex gap-4 mb-4">
-        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 border-gray-200 rounded-md" />
-        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 border-gray-200 rounded-md" />
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Order Status</h1>
+      
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {styleLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Portal
+                  </th>
+                  {portals.map((portal) => (
+                    <th key={portal} scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {portal}
+                    </th>
+                  ))}
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {["Orders", "Inventory", "Cutting", "Ship"].map((type, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {type}
+                    </td>
+                    {portalStats.map((stat, i) => (
+                      <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                        {type === "Orders" ? stat.ordersByPortal : 
+                         type === "Inventory" ? stat.inventoryByPortal : 
+                         type === "Cutting" ? stat.cuttingByPortal : 
+                         stat.shipByPortal + stat.inventoryByPortal}
+                      </td>
+                    ))}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+                      <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                        {type === "Orders" ? totalOrders :
+                         type === "Inventory" ? foundInInventory :
+                         type === "Cutting" ? cutting :
+                         ship + foundInInventory}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {
-        styleLoading? <>
-          <div className="container mx-auto grid items-center justify-center">
-              <span className="w-20 h-20 border-b-2 border-t-2  duration-75 ease-in animate-spin border-blue-500 rounded-full"> </span>
-          </div>
-        </> :
-      
-      
-      <table className="border-collapse border w-full text-center text-md text-lg">
-        <thead>
-          <tr className="bg-gray-100 text-center text-xl text-blue-500">
-            <th className="border border-gray-200 p-3">Portal</th>
-            {portals.map((portal) => (<th key={portal} className="border p-3 border-gray-200">{portal}</th>))}
-            <th className="border border-gray-200 p-3">Total Orders</th>
-          </tr>
-        </thead>
-        <tbody>
-          {["Orders", "Inventory", "Cutting", "Ship"].map((type, index) => (
-            <tr key={index} className="hover:bg-gray-100">
-              <td className="border border-gray-200 p-3">{type}</td>
-              {portalStats.map((stat, i) => (
-                <td key={i} className="border border-gray-200 p-3">
-                  {type === "Orders" ? stat.ordersByPortal : 
-                   type === "Inventory" ? stat.inventoryByPortal : 
-                   type === "Cutting" ? stat.cuttingByPortal : 
-                   stat.shipByPortal + stat.inventoryByPortal}
-                </td>
-              ))}
-              <td className="border border-gray-100 p-3">
-                {type === "Orders" ? totalOrders :
-                 type === "Inventory" ? foundInInventory :
-                 type === "Cutting" ? cutting :
-                 ship +foundInInventory}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
+          <h3 className="text-gray-500 text-sm font-medium">Total Orders</h3>
+          <p className="text-2xl font-bold text-gray-800">{totalOrders}</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
+          <h3 className="text-gray-500 text-sm font-medium">In Inventory</h3>
+          <p className="text-2xl font-bold text-gray-800">{foundInInventory}</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+          <h3 className="text-gray-500 text-sm font-medium">In Cutting</h3>
+          <p className="text-2xl font-bold text-gray-800">{cutting}</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-purple-500">
+          <h3 className="text-gray-500 text-sm font-medium">Shipped</h3>
+          <p className="text-2xl font-bold text-gray-800">{ship + foundInInventory}</p>
+        </div>
+      </div>
     </div>
   );
-  
 };
 
 export default EmpDashboard;
