@@ -11,7 +11,7 @@ const ProductContextProvider = ({ children }) => {
   const [styleLoading, setStyleLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const MAX_RECORDS = 7000;
+  const MAX_RECORDS = 5000;
   const BATCH_SIZE = 500;
   const API_HEADERS = {
     "xc-token": "LsOnEY-1wS4Nqjz15D1_gxHu0pFVcmA_5LNqCAqK",
