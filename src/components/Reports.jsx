@@ -54,33 +54,37 @@ export default function Reports() {
 
   // Corrected scanner name extraction
   const getScannerName = (order) => {
-    try {
-      // Handle the nested structure properly
-      if (order.employees && typeof order.employees === 'object') {
-        if (order.employees.value && order.employees.value.user_name) {
-          return order.employees.value.user_name;
-        }
-        if (order.employees.user_name) {
-          return order.employees.user_name;
-        }
+  try {
+    const extractName = (name) => {
+      // Ensure it's a string and return part before " / " if present
+      return typeof name === 'string' ? name.split(" / ")[0] : "N/A";
+    };
+
+    if (order.employees && typeof order.employees === 'object') {
+      if (order.employees.value && order.employees.value.user_name) {
+        return extractName(order.employees.value.user_name);
       }
-      
-      // Handle stringified JSON case
-      if (typeof order.employees === 'string') {
-        const parsed = JSON.parse(order.employees);
-        if (parsed.value && parsed.value.user_name) {
-          return parsed.value.user_name;
-        }
-        if (parsed.user_name) {
-          return parsed.user_name;
-        }
+      if (order.employees.user_name) {
+        return extractName(order.employees.user_name);
       }
-      
-      return "N/A";
-    } catch (e) {
-      return "N/A";
     }
-  };
+
+    if (typeof order.employees === 'string') {
+      const parsed = JSON.parse(order.employees);
+      if (parsed.value && parsed.value.user_name) {
+        return extractName(parsed.value.user_name);
+      }
+      if (parsed.user_name) {
+        return extractName(parsed.user_name);
+      }
+    }
+
+    return "N/A";
+  } catch (e) {
+    return "N/A";
+  }
+};
+
 
   const exportToCSV = () => {
     const csvData = latestScans.map((order) => ({
@@ -114,18 +118,29 @@ export default function Reports() {
     doc.setFontSize(10);
 
     const headers = [
-      ["Sr.No", "Order ID", "Style", "Size", "Channel", "Scanner", "Location", "Status"]
+      ["Sr.No", "Channel", "Order Id", "Sku", "Scanner", "Location",  "Time"]
     ];
 
-    const rows = selectedOrders.map((order, i) => [
+    const rows = selectedOrders
+    .filter((item)=>!(item.locations?.name?.includes("Shipping Table")))
+    
+    .map((order, i) => [
       i + 1,
-      order.order_id || "N/A",
-      order.orders_2?.style_number || "N/A",
-      orders.find((o) => o.order_id === order.order_id)?.size || "N/A",
       orders.find((o) => o.order_id === order.order_id)?.channel || "N/A",
+      order.order_id || "N/A",
+      `${order.orders_2?.style_number}-${orders.find((o) => o.order_id === order.order_id)?.size }` || "N/A",
+      // orders.find((o) => o.order_id === order.order_id)?.size || "N/A",
       getScannerName(order),
       order.locations?.name?.split(" / ")[0] || "N/A",
-      order.locations?.name?.includes("Shipping Table") ? "Shipped" : "Pending"
+      // order.locations?.name?.includes("Shipping Table") ? "Shipped" : "Pending"
+       new Date(order.scanned_timestamp).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })
     ]);
 
     autoTable(doc, {
@@ -143,14 +158,14 @@ export default function Reports() {
         fontStyle: 'bold'
       },
       columnStyles: {
-        0: { cellWidth: 10 },
+        0: { cellWidth: 15 },
         1: { cellWidth: 25 },
         2: { cellWidth: 25 },
-        3: { cellWidth: 15 },
+        3: { cellWidth: 30 },
         4: { cellWidth: 25 },
-        5: { cellWidth: 30 },
-        6: { cellWidth: 35 },
-        7: { cellWidth: 20 }
+        5: { cellWidth: 32 },
+        6: { cellWidth: 50 },
+        // 7: { cellWidth: 20 }
       },
       margin: { top: 20 }
     });
