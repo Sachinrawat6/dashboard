@@ -386,7 +386,7 @@ export default function Reports() {
               {currentOrders.map((order, i) => {
                 const matchingData = orders.find(item => item.order_id === order.order_id) || {};
                 const isSelected = selectedOrders.some(o => o.order_id === order.order_id);
-
+                    
                 return (
                   <tr
                     key={`order-${i}`}
@@ -402,6 +402,7 @@ export default function Reports() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {indexOfFirstItem + i + 1}
+                      {console.log(matchingData)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
                       {order.order_id}

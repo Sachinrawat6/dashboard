@@ -13,7 +13,9 @@ function Sidebar() {
     { path: "/reports", icon: FileText, label: "Pending Report" },
     { path: "/products", icon: Package, label: "View Products", hidden: true },
     { path: "/status", icon: User, label: "Employee Status" },
-    { path: "/orders", icon: FileText, label: "Orders Report" }
+    { path: "/orders", icon: FileText, label: "Orders Report" },
+    { path: "/tailor", icon: User, label: "Tailor Report" },
+
   ];
 
   return (
