@@ -47,6 +47,7 @@ const DateFilterNocoDB = () => {
     "Final Checking",
     "Cutting Helper",
     "Shipping Table",
+    "Inventory Table"
   ];
 
   // Color palette for charts
@@ -139,7 +140,7 @@ const DateFilterNocoDB = () => {
       return {
         "Order ID": order.order_id,
         "Style Number": order?.orders_2?.style_number || "N/A",
-        Channel: order?.orders_2?.channel || "N/A",
+        // Channel: order?.orders_2?.channel || "N/A",
         Employee: order?.employees?.user_name.split(" / ")[0] || "N/A",
         Location: order?.locations?.name || "N/A",
         "Scan Timestamp": order.scanned_timestamp || "N/A",
@@ -432,12 +433,12 @@ const DateFilterNocoDB = () => {
 
               <div className="bg-white p-6 rounded-xl shadow">
                 <h3 className="font-medium text-gray-700 mb-4">
-                  Top Employees
+                  Top 10 Employees
                 </h3>
                 <div className="space-y-3">
                   {Object.entries(stats.employeeCounts)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 3)
+                    .slice(0, 10)
                     .map(([employee, count]) => (
                       <div key={employee} className="flex items-center">
                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
@@ -489,7 +490,7 @@ const DateFilterNocoDB = () => {
 
                   {Object.entries(stats.locationCounts)
                     .sort((a, b) => b[1] - a[1]) // Sort by count descending
-                    .slice(0, 3) // Take top 3
+                    .slice(0, 10) // Take top 3
                     .map(([loc, count]) => (
                       <div
                         key={loc}
@@ -623,12 +624,12 @@ const DateFilterNocoDB = () => {
                     >
                       Style
                     </th>
-                    <th
+                    {/* <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Channel
-                    </th>
+                    </th> */}
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -661,9 +662,9 @@ const DateFilterNocoDB = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {record.orders_2?.style_number || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {record.orders_2?.channel || "N/A"}
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-2">

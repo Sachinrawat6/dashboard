@@ -15,6 +15,7 @@ export default function Reports() {
     startDate: '',
     endDate: ''
   });
+  const [locationFilter, setLocationFilter] = useState('');
   const itemsPerPage = 100;
 
   useEffect(() => {
@@ -44,43 +45,50 @@ export default function Reports() {
     setCurrentPage(1); // Reset to first page when filters change
   };
 
-  const applyDateFilter = (data) => {
-    if (!dateRange.startDate && !dateRange.endDate) {
-      return data;
+  const handleLocationFilterChange = (e) => {
+    setLocationFilter(e.target.value);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const applyFilters = (data) => {
+    let filteredData = data;
+    
+    // Apply date filter
+    if (dateRange.startDate || dateRange.endDate) {
+      filteredData = filteredData.filter(order => {
+        const matchingOrder = orders.find(o => o.order_id === order.order_id);
+        if (!matchingOrder || !matchingOrder.created_at) return false;
+
+        const createdAt = new Date(matchingOrder.created_at);
+        const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
+        const endDate = dateRange.endDate ? new Date(dateRange.endDate) : null;
+
+        // Set time to beginning of day for start date
+        if (startDate) startDate.setHours(0, 0, 0, 0);
+        
+        // Set time to end of day for end date
+        if (endDate) endDate.setHours(23, 59, 59, 999);
+
+        return (
+          (!startDate || createdAt >= startDate) &&
+          (!endDate || createdAt <= endDate)
+        );
+      });
     }
 
-    return data.filter(order => {
-      const matchingOrder = orders.find(o => o.order_id === order.order_id);
-      if (!matchingOrder || !matchingOrder.created_at) return false;
+    // Apply location filter
+    if (locationFilter) {
+      filteredData = filteredData.filter(order => {
+        const locationName = order.locations?.name || '';
+        return locationName.toLowerCase().includes(locationFilter.toLowerCase());
+      });
+    }
 
-      const createdAt = new Date(matchingOrder.created_at);
-      const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
-      const endDate = dateRange.endDate ? new Date(dateRange.endDate) : null;
-
-      // Set time to beginning of day for start date
-      if (startDate) startDate.setHours(0, 0, 0, 0);
-      
-      // Set time to end of day for end date
-      if (endDate) endDate.setHours(23, 59, 59, 999);
-
-      // Debug logs to check values
-      console.log('Created At:', createdAt);
-      console.log('Start Date:', startDate);
-      console.log('End Date:', endDate);
-      console.log('Passes filter:', 
-        (!startDate || createdAt >= startDate) &&
-        (!endDate || createdAt <= endDate)
-      );
-
-      return (
-        (!startDate || createdAt >= startDate) &&
-        (!endDate || createdAt <= endDate)
-      );
-    });
+    return filteredData;
   };
 
   // Pagination Logic
-  const filteredData = applyDateFilter(latestScans);
+  const filteredData = applyFilters(latestScans);
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -273,6 +281,18 @@ export default function Reports() {
               </div>
             </div>
 
+            {/* Location Filter */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Location:</label>
+              <input
+                type="text"
+                placeholder="Filter by location"
+                value={locationFilter}
+                onChange={handleLocationFilterChange}
+                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={exportToCSV}
@@ -300,7 +320,7 @@ export default function Reports() {
             Showing {indexOfFirstItem + 1}-
             {Math.min(indexOfLastItem, filteredData.length)} of{" "}
             {filteredData.length} records
-            {dateRange.startDate || dateRange.endDate ? (
+            {(dateRange.startDate || dateRange.endDate || locationFilter) ? (
               <span className="text-blue-500 ml-2">
                 (Filtered from {latestScans.length})
               </span>
@@ -402,7 +422,6 @@ export default function Reports() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {indexOfFirstItem + i + 1}
-                      {console.log(matchingData)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
                       {order.order_id}
@@ -486,14 +505,17 @@ export default function Reports() {
 
         {filteredData.length === 0 && !loading && (
           <div className="text-center py-10 text-gray-500">
-            {dateRange.startDate || dateRange.endDate ? (
+            {(dateRange.startDate || dateRange.endDate || locationFilter) ? (
               <div>
-                No orders found matching your date filter
+                No orders found matching your filters
                 <button 
-                  onClick={() => setDateRange({ startDate: '', endDate: '' })}
+                  onClick={() => {
+                    setDateRange({ startDate: '', endDate: '' });
+                    setLocationFilter('');
+                  }}
                   className="ml-2 text-blue-500 hover:underline"
                 >
-                  Clear filters
+                  Clear all filters
                 </button>
               </div>
             ) : (

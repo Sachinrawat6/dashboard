@@ -101,7 +101,7 @@ const DateWiseOrderDashboard = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {allDates.map((date) => {
+                {allDates.map((date,index) => {
                   // Filter orders for the date and selected portal
                   const dateOrders = (ordersByDate[date] || []).filter(order => 
                     selectedPortal === "All" || order.channel.includes(selectedPortal)
@@ -123,7 +123,7 @@ const DateWiseOrderDashboard = () => {
                   const ship = dateOrders.filter(order => shippingOrderIds.has(order.order_id)).length;
 
                   return (
-                    <tr key={date} className="hover:bg-gray-50">
+                    <tr  key={date} className={`hover:bg-blue-100 cursor-pointer   ${index % 2 == 0 ? "bg-blue-50":""} `}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {new Date(date).toLocaleDateString('en-IN')}
                       </td>

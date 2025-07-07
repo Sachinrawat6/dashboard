@@ -9,10 +9,10 @@ function Sidebar() {
 
   // Navigation items configuration
   const navItems = [
-    { path: "/", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/reports", icon: FileText, label: "Pending Orders" },
+    { path: "/", icon: LayoutDashboard, label: "Locationwise Productivity" },
     { path: "/products", icon: Package, label: "View Products", hidden: true },
-    { path: "/status", icon: User, label: "Productivity Dashboard" },
+    { path: "/status", icon: User, label: "Namewise Productivity " },
     { path: "/date-wise-productivity", icon: User, label: "DateWise Productivity" },
     { path: "/orders", icon: FileText, label: "Orders Dashboard" },
     { path: "/date-wise-orders", icon: FileText, label: "DateWise Orders Dashboard" },
