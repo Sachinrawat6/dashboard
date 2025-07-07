@@ -18,6 +18,7 @@ const ProductContextProvider = ({ children }) => {
   };
 
   const fetchLocation = async () => {
+    setLoading(true)
     try {
       let allLocations = [];
       const totalBatches = Math.ceil(MAX_RECORDS / BATCH_SIZE);
@@ -45,6 +46,9 @@ const ProductContextProvider = ({ children }) => {
     } catch (error) {
       console.error("Error fetching Locations:", error);
       setError("Failed to load locations data");
+    }
+    finally{
+      setLoading(false)
     }
   };
 
@@ -81,20 +85,26 @@ const ProductContextProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        await Promise.all([fetchOrders(), fetchLocation()]);
-      } catch (error) {
-        console.error("Initial data load failed:", error);
-        setError("Initial data load failed");
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     try {
+  //       await Promise.all([fetchOrders(), fetchLocation()]);
+  //     } catch (error) {
+  //       console.error("Initial data load failed:", error);
+  //       setError("Initial data load failed");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    loadData();
-  }, []);
+  //   loadData();
+  // }, []);
+
+
+  useEffect(()=>{
+    fetchOrders();
+    fetchLocation();
+  },[])
 
 //   const applyFilters = (data) => {
 //     if (!data || !data.length) return [];
@@ -442,6 +452,7 @@ const applyFilters = (data) => {
         error,
         fetchOrders,
         fetchLocation,
+        styleLoading
       }}
     >
       {children}

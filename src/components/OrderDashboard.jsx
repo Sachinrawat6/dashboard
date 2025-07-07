@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useGlobalContext } from "./ProductContext";
 
-const EmpDashboard = () => {
+const OrderDashboard = () => {
   const { scanTracking2, orders, loading, styleLoading } = useGlobalContext();
 
   const [startDate, setStartDate] = useState("");
@@ -27,6 +27,7 @@ const EmpDashboard = () => {
   const totalOrders = filteredOrders.length;
   const foundInInventory = filteredOrders.filter(order => order.status === "shipped").length;
   const cutting = filteredOrders.filter(order => order.status === "pending").length;
+  const cancelled = filteredOrders.filter(order => order.status === "cancel").length;
 
   const shippingOrderIds = new Set(
     scanTracking2
@@ -40,11 +41,12 @@ const EmpDashboard = () => {
     const ordersByPortal = filteredOrders.filter(order => order.channel.includes(portal)).length;
     const inventoryByPortal = filteredOrders.filter(order => order.status === "shipped" && order.channel.includes(portal)).length;
     const cuttingByPortal = filteredOrders.filter(order => order.status === "pending" && order.channel.includes(portal)).length;
+    const cancelledByPortal = filteredOrders.filter(order => order.status === "cancel" && order.channel.includes(portal)).length;
     const shipByPortal = filteredOrders.filter(order => shippingOrderIds.has(order.order_id) && order.channel.includes(portal)).length;
-    return { portal, ordersByPortal, inventoryByPortal, cuttingByPortal, shipByPortal };
+    return { portal, ordersByPortal, inventoryByPortal, cuttingByPortal, cancelledByPortal, shipByPortal };
   });
 
-  if (loading) {
+  if (styleLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-blue-500"></div>
@@ -101,7 +103,7 @@ const EmpDashboard = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {["Orders", "Inventory", "Cutting", "Ship"].map((type, index) => (
+                {["Orders", "Inventory", "Cutting", "Shipped","Canceled"].map((type, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {type}
@@ -111,15 +113,19 @@ const EmpDashboard = () => {
                         {type === "Orders" ? stat.ordersByPortal : 
                          type === "Inventory" ? stat.inventoryByPortal : 
                          type === "Cutting" ? stat.cuttingByPortal : 
-                         stat.shipByPortal + stat.inventoryByPortal}
+                         type === "Shipped" ? stat.shipByPortal + stat.inventoryByPortal :
+                         stat.cancelledByPortal}
                       </td>
                     ))}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
                       <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800">
                         {type === "Orders" ? totalOrders :
                          type === "Inventory" ? foundInInventory :
-                         type === "Cutting" ? cutting :
-                         ship + foundInInventory}
+                         type === "Cutting" ? cutting : 
+                         type === "Shipped" ? ship + foundInInventory: 
+                          cancelled
+
+                         }
                       </span>
                     </td>
                   </tr>
@@ -152,4 +158,4 @@ const EmpDashboard = () => {
   );
 };
 
-export default EmpDashboard;
+export default OrderDashboard;

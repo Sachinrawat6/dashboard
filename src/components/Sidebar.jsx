@@ -10,11 +10,12 @@ function Sidebar() {
   // Navigation items configuration
   const navItems = [
     { path: "/", icon: LayoutDashboard, label: "Dashboard" },
-    { path: "/reports", icon: FileText, label: "Pending Report" },
+    { path: "/reports", icon: FileText, label: "Pending Orders" },
     { path: "/products", icon: Package, label: "View Products", hidden: true },
-    { path: "/status", icon: User, label: "Employee Status" },
-    { path: "/orders", icon: FileText, label: "Orders Report" },
-    { path: "/tailor", icon: User, label: "Tailor Report" },
+    { path: "/status", icon: User, label: "Productivity Dashboard" },
+    { path: "/date-wise-productivity", icon: User, label: "DateWise Productivity" },
+    { path: "/orders", icon: FileText, label: "Orders Dashboard" },
+    { path: "/date-wise-orders", icon: FileText, label: "DateWise Orders Dashboard" },
 
   ];
 

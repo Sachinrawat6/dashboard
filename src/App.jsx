@@ -2,13 +2,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProductContextProvider } from "./components/ProductContext";
 
 import Sidebar from "./components/Sidebar";
-import Dashboard from "./components/Dashboard";
+// import Dashboard from "./components/Dashboard";
+import Dashboard from "./components/Dashboard"
 import DataTable from "./components/DataTable";
 import Reports from "./components/Reports";
 import EmployeeStatus from "./components/EmployeeStatus";
-import EmpDashboard from "./components/EmpDashboard";
+import OrderDashboard from "./components/OrderDashboard";
 import Test from "./components/Test";
-import TailorReport from "./components/TailorReport";
+import DateWiseOrderDashboard from "./components/DateWiseOrderDashboard";
 
 
 
@@ -24,9 +25,10 @@ function App() {
               <Route path="/products" element={<DataTable />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/status" element={<EmployeeStatus/>} />
-              <Route path="/orders" element={<EmpDashboard/>} />
+              <Route path="/orders" element={<OrderDashboard/>} />
+              <Route path="/date-wise-orders" element={<DateWiseOrderDashboard/>} />
               <Route path="/test" element={<Test/>} />
-              <Route path="/tailor" element={<Test/>} />
+              <Route path="/date-wise-productivity" element={<Test/>} />
             </Routes>
           </div>
         </div>
