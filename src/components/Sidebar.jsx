@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LayoutDashboard, FileText, User, Package } from "lucide-react";
+import { Menu, X, LayoutDashboard, FileText, User, Package, Search, Box, LocateIcon } from "lucide-react";
 
 function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
@@ -10,12 +10,13 @@ function Sidebar() {
   // Navigation items configuration
   const navItems = [
     { path: "/reports", icon: FileText, label: "Pending Orders" },
-    { path: "/", icon: LayoutDashboard, label: "Locationwise Productivity" },
+    { path: "/", icon: LocateIcon, label: "Locationwise Productivity" },
     { path: "/products", icon: Package, label: "View Products", hidden: true },
     { path: "/status", icon: User, label: "Namewise Productivity " },
     { path: "/date-wise-productivity", icon: User, label: "DateWise Productivity" },
-    { path: "/orders", icon: FileText, label: "Orders Dashboard" },
-    { path: "/date-wise-orders", icon: FileText, label: "DateWise Orders Dashboard" },
+    { path: "/orders", icon: Box, label: "Orders Dashboard" },
+    { path: "/date-wise-orders", icon: Box, label: "DateWise Orders Dashboard" },
+    { path: "/track-order-history", icon: Search, label: "Track History" },
 
   ];
 

@@ -10,6 +10,7 @@ import EmployeeStatus from "./components/EmployeeStatus";
 import OrderDashboard from "./components/OrderDashboard";
 import Test from "./components/Test";
 import DateWiseOrderDashboard from "./components/DateWiseOrderDashboard";
+import DetailTracker from "./components/DetailTracker";
 
 
 
@@ -28,6 +29,7 @@ function App() {
               <Route path="/orders" element={<OrderDashboard/>} />
               <Route path="/date-wise-orders" element={<DateWiseOrderDashboard/>} />
               <Route path="/test" element={<Test/>} />
+              <Route path="/track-order-history" element={<DetailTracker/>} />
               <Route path="/date-wise-productivity" element={<Test/>} />
             </Routes>
           </div>
