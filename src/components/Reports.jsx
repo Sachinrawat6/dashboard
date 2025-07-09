@@ -12,10 +12,10 @@ export default function Reports() {
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [latestScans, setLatestScans] = useState([]);
   const [dateRange, setDateRange] = useState({
-    startDate: '',
-    endDate: ''
+    startDate: "",
+    endDate: "",
   });
-  const [locationFilter, setLocationFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState("");
   const itemsPerPage = 100;
 
   useEffect(() => {
@@ -38,9 +38,9 @@ export default function Reports() {
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
-    setDateRange(prev => ({
+    setDateRange((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     setCurrentPage(1); // Reset to first page when filters change
   };
@@ -52,20 +52,22 @@ export default function Reports() {
 
   const applyFilters = (data) => {
     let filteredData = data;
-    
+
     // Apply date filter
     if (dateRange.startDate || dateRange.endDate) {
-      filteredData = filteredData.filter(order => {
-        const matchingOrder = orders.find(o => o.order_id === order.order_id);
+      filteredData = filteredData.filter((order) => {
+        const matchingOrder = orders.find((o) => o.order_id === order.order_id);
         if (!matchingOrder || !matchingOrder.created_at) return false;
 
         const createdAt = new Date(matchingOrder.created_at);
-        const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
+        const startDate = dateRange.startDate
+          ? new Date(dateRange.startDate)
+          : null;
         const endDate = dateRange.endDate ? new Date(dateRange.endDate) : null;
 
         // Set time to beginning of day for start date
         if (startDate) startDate.setHours(0, 0, 0, 0);
-        
+
         // Set time to end of day for end date
         if (endDate) endDate.setHours(23, 59, 59, 999);
 
@@ -78,9 +80,11 @@ export default function Reports() {
 
     // Apply location filter
     if (locationFilter) {
-      filteredData = filteredData.filter(order => {
-        const locationName = order.locations?.name || '';
-        return locationName.toLowerCase().includes(locationFilter.toLowerCase());
+      filteredData = filteredData.filter((order) => {
+        const locationName = order.locations?.name || "";
+        return locationName
+          .toLowerCase()
+          .includes(locationFilter.toLowerCase());
       });
     }
 
@@ -248,7 +252,7 @@ export default function Reports() {
 
   return (
     <div className="p-6 max-w-full overflow-x-auto">
-      <Filters/>
+      <Filters />
       <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
           <h2 className="text-2xl font-semibold text-gray-800">
@@ -259,7 +263,9 @@ export default function Reports() {
             {/* Date Range Filter */}
             <div className="flex flex-col sm:flex-row gap-2 items-center">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">From:</label>
+                <label className="text-sm font-medium text-gray-700">
+                  From:
+                </label>
                 <input
                   type="date"
                   name="startDate"
@@ -283,7 +289,9 @@ export default function Reports() {
 
             {/* Location Filter */}
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Location:</label>
+              <label className="text-sm font-medium text-gray-700">
+                Location:
+              </label>
               <input
                 type="text"
                 placeholder="Filter by location"
@@ -320,11 +328,44 @@ export default function Reports() {
             Showing {indexOfFirstItem + 1}-
             {Math.min(indexOfLastItem, filteredData.length)} of{" "}
             {filteredData.length} records
-            {(dateRange.startDate || dateRange.endDate || locationFilter) ? (
+            {dateRange.startDate || dateRange.endDate || locationFilter ? (
               <span className="text-blue-500 ml-2">
                 (Filtered from {latestScans.length})
               </span>
             ) : null}
+          </div>
+
+          <div className="flex gap-6 mb-6">
+            <div className="bg-white truncate p-4 rounded-lg shadow-sm border border-gray-100 flex-1">
+              <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">
+                Pending Orders
+              </p>
+              <p className="text-2xl font-bold text-blue-600 mt-1">
+                {
+                  filteredData.filter(
+                    (order) =>
+                      !order?.locations?.name
+                        ?.toLowerCase()
+                        .includes("shipping table")
+                  ).length
+                }
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex-1">
+              <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">
+                Shipped Orders
+              </p>
+              <p className="text-2xl font-bold text-green-600 mt-1">
+                {
+                  filteredData.filter((order) =>
+                    order?.locations?.name
+                      ?.toLowerCase()
+                      .includes("shipping table")
+                  ).length
+                }
+              </p>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -404,13 +445,18 @@ export default function Reports() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {currentOrders.map((order, i) => {
-                const matchingData = orders.find(item => item.order_id === order.order_id) || {};
-                const isSelected = selectedOrders.some(o => o.order_id === order.order_id);
-                    
+                const matchingData =
+                  orders.find((item) => item.order_id === order.order_id) || {};
+                const isSelected = selectedOrders.some(
+                  (o) => o.order_id === order.order_id
+                );
+
                 return (
                   <tr
                     key={`order-${i}`}
-                    className={`${isSelected ? "bg-blue-50" : "hover:bg-gray-50"}`}
+                    className={`${
+                      isSelected ? "bg-blue-50" : "hover:bg-gray-50"
+                    }`}
                   >
                     <td className="px-4 py-3 whitespace-nowrap">
                       <input
@@ -505,13 +551,13 @@ export default function Reports() {
 
         {filteredData.length === 0 && !loading && (
           <div className="text-center py-10 text-gray-500">
-            {(dateRange.startDate || dateRange.endDate || locationFilter) ? (
+            {dateRange.startDate || dateRange.endDate || locationFilter ? (
               <div>
                 No orders found matching your filters
-                <button 
+                <button
                   onClick={() => {
-                    setDateRange({ startDate: '', endDate: '' });
-                    setLocationFilter('');
+                    setDateRange({ startDate: "", endDate: "" });
+                    setLocationFilter("");
                   }}
                   className="ml-2 text-blue-500 hover:underline"
                 >
