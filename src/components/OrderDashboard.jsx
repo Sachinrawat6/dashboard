@@ -247,7 +247,7 @@ const OrderDashboard = () => {
   const stats = useMemo(() => {
     const totalOrders = filteredOrders.filter((order)=>!order.channel?.toLowerCase()?.includes("return") && !order.channel?.toLowerCase()?.includes("new")).length;
     const foundInInventory = filteredOrders.filter(order => order.status === "shipped").length;
-    const cutting = filteredOrders.filter(order => order.status === "pending").length;
+    const cutting = filteredOrders.filter(order => order.status === "pending" && !order.channel.toLowerCase().includes("new")&& !order.channel.toLowerCase().includes("return")).length;
     const cancelled = filteredOrders.filter(order => order.status === "cancel").length;
 
     const shippingOrderIds = new Set(
