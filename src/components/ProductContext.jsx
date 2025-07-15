@@ -85,6 +85,7 @@ const ProductContextProvider = ({ children }) => {
     }
   };
 
+  console.log(orders)
   // useEffect(() => {
   //   const loadData = async () => {
   //     try {
